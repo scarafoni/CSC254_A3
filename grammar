@@ -1,0 +1,31 @@
+p -> SL
+SL -> S SL
+SL -> 
+S -> id := E 
+S -> read id
+S -> write E
+s -> if C SL end
+S -> while C SL end
+C -> E rn E
+rn -> == 
+rn -> != 
+rn -> < 
+rn -> >
+rn -> <= 
+rn -> >=
+E -> T TT
+T -> F FT
+TT -> ao T TT
+TT -> 
+FT -> mo F FT
+FT -> 
+ao -> +
+ao -> -
+mo -> *
+mo -> /
+F -> id
+F -> num
+F -> (E )
+
+each S is it's own line
+any derivation of sl it eliminated
