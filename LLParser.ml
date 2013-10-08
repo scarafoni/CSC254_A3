@@ -724,18 +724,15 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
     | Assign (id, exp) ->
       Error "interpretS: Unimplemented Assign"
     | Read (id) ->
-      Error "interpretS: Unimplemented Read"
-      (*
-      match env.input with
+      (match env.input with
       | line :: rest ->
-        updateEnv id env (int_of_string line) >>= (fun newEnv ->
-          Result {values=newEnv.values; input=rest; output=newEnv.output})
-      | [] -> Error "Missing value to read"
-      *)
+        let newEnv = updateEnv id env (int_of_string line) in
+        Result {values=newEnv.values; input=rest; output=newEnv.output}
+      | [] -> Error "Missing input to read")
     | Write (exp) ->
-        interpretE exp env >>= (fun v ->
-          let line = string_of_int v in
-          Result {values=env.values; input=env.input; output=line :: env.output})
+      interpretE exp env >>= (fun v ->
+        let line = string_of_int v in
+        Result {values=env.values; input=env.input; output=line :: env.output})
     | If (cnd, stmts) ->
       Error "interpretS: Unimplemented If"
     | While (cnd, stmts) ->
