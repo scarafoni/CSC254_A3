@@ -707,15 +707,6 @@ let rec interpret
       in  interpretAst ast input
 *)
 
-let rec interpret2
-     (table   : parseTable)
-     (program : string)
-     (input   : string list)
-              : (string,ast) either =
-	      match parse table program with
-	      | Result a -> Result (toAstP a)
-	      | Error e  -> Error e
-
 and interpretAst (ast : ast) (input : string list) 
   = interpretSL ast {values=[]; input=input; output=[]} 
       >>= (fun e -> Result (List.rev e.output))
@@ -753,6 +744,16 @@ and interpretE : expr -> environment -> (string,value) either
   = undefined "interpretE"
 
 (* ****************************************************** *)
+
+let rec interpret2
+     (table   : parseTable)
+     (program : string)
+     (input   : string list)
+              : (string,ast) either =
+	      match parse table program with
+	      | Result a -> Result (toAstP a)
+	      | Error e  -> Error e
+
 let rec print_parse_tree (t : (string,parseTree) either)  = match t with
 	| Error e   -> print_string e 
 	| Result Node(x,_) ->  print_string x
