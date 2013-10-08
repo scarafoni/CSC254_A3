@@ -629,18 +629,20 @@ exception SyntaxError of string;;
 (* You will need to write code to map from the `ParseTree`
    to the AST.  Where you see 'undefined' you will have
    to fill in with an actual implementation. *)
-let rec toAstP : parseTree -> ast = undefined "toAstP"
+let rec toAstP : parseTree -> ast = function
+	| Node ("P",[rest]) -> toAstSL rest
+	| _		    -> []
 
 (* Replace the 'something' with a pattern match which will bind the
    correct 's' and 'sl' so the RHS can be:  toAstS s :: toAstSL sl  *)
 and toAstSL : parseTree -> ast = function
-  | Node ("SL", something) -> undefined "toAstSL" () (* toAstS s :: toAstSL sl *)
-  | _                      -> []
+  | Node ("SL",[s;sl]) -> [toAstS s]@ toAstSL sl
+  | _                  -> []
 
 and toAstS : parseTree -> statement = function
 (* Here you will want a pattern match on each LHS matching
    each RHS of the Statement data type (Assign, Read, ...). *)
-  | _ -> undefined "toAstS" ()
+  | Node ("S",["read";[]] -> 
 
 and toAstC : parseTree -> cond = function
   | _ -> undefined "toAstC" ()
@@ -782,4 +784,4 @@ write sum
 write sum / 2";;
 
 let tr = parse (makeParseTable extendedCalcGrammar) sentence;;
-
+interpret2 (makeParseTable extendedCalcGrammar) sentence

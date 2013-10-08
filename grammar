@@ -1,31 +1,31 @@
-p -> SL
-SL -> S SL
-SL -> 
-S -> id := E 
-S -> read id
-S -> write E
-s -> if C SL end
-S -> while C SL end
-C -> E rn E
-rn -> == 
+p -> SL $$ 		#remove $$
+SL -> S SL		#S is hoisted
+SL ->			# 
+S -> id := E		#:= hoisted, id on left, E on right 
+S -> read id		#read hoisted 
+S -> write E		#write is hoisted, E is child,
+s -> if C SL end	#if hoisted, the C is the left child, SL is irght
+S -> while C SL end	#while is hoisted, C is left, SL is right
+C -> E rn E		#rn derives, hoisted, E is left and right child
+rn -> == 		
 rn -> != 
 rn -> < 
 rn -> >
 rn -> <= 
 rn -> >=
-E -> T TT
-T -> F FT
-TT -> ao T TT
-TT -> 
-FT -> mo F FT
-FT -> 
+E -> T TT		#TT hoisted if ao, else T
+T -> F FT		#FT[0] is hoisted if FT !-> null, else F is hoisted
+TT -> ao T TT		#ao hoisted, T is left child, TT is right
+TT -> 			
+FT -> mo F FT		#mo is hoisted,
+FT -> 			
 ao -> +
 ao -> -
 mo -> *
 mo -> /
 F -> id
 F -> num
-F -> (E )
+F -> (E )		#( is left child, E is middle, ) is right
 
-each S is it's own line
-any derivation of sl it eliminated
+note= need "hoisting" function for AST, this takes a child, replaces the parent node with its value, then elminates the child
+next statement is added to right of tree if the tree is fully derived
