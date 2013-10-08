@@ -696,10 +696,24 @@ let rec interpret
      (table   : parseTable)
      (program : string)
      (input   : string list)
-              : (string,string list) either
-  = parse table program >>= (fun t ->
-      let ast = toAstP t
-      in  interpretAst ast input)
+              : (string,ast) either =
+	      match parse table program with
+	      | Result a -> Result (toAstP a)
+	      | Error e  -> Error e
+
+
+let rec interpret2 
+     (table   : parseTable)
+     (program : string)
+     (input   : string list)
+              : (string,ast) either =
+	      match parse table program with
+	      | Result a -> Result (toAstP a)
+	      | Error e  -> Error e
+
+
+
+(*interpretAst ast input)*)
 (* equivalent with matching would be:
   = match parse table program with
       | Error s  -> Error s
@@ -747,4 +761,23 @@ and interpretCond : cond -> environment -> (string,bool) either
 and interpretE : expr -> environment -> (string,value) either
   = undefined "interpretE"
 
+
 (* ****************************************************** *)
+let rec print_parse_tree (t : (string,parseTree) either)  = match t with
+	| Error e   -> print_string e 
+	| Result Node(x,_) ->  print_string x
+;;
+
+let rec print_list (l : string list)  = function 
+	| [] -> print_string ""
+	| x::xt -> print_string x
+;;
+
+let sentence = "read a
+read b
+sum := a + b
+write sum
+write sum / 2";;
+
+let tr = parse (makeParseTable extendedCalcGrammar) sentence;;
+
