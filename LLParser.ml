@@ -555,7 +555,7 @@ type parseStackEntry = PNum of int | PSym of string
 type ('a,'b) either = Error of 'a | Result of 'b
 
 (* To make the either type easier to work with we provide this helper
-   function called bind (>>=) which allows you to compose valves of the 
+   function called bind (>>=) which allows you to compose values of the 
    either type with functions that my produce further values of the
    either type without first matching.  The behavior of bind is to 
    result in the first error or continue the computation while it is
@@ -688,7 +688,6 @@ let writeEnv (e : environment) (s : string) : environment
   = undefined "writeEnv" ()
 
 (* ******************************************************* *)
-
 (* The next two functions are complete and illustrate using
    the bind operator >>= to handle errors without our writing explicit
    matching for errors.*)
@@ -707,6 +706,15 @@ let rec interpret
       let ast = toAstP t
       in  interpretAst ast input
 *)
+
+let rec interpret2
+     (table   : parseTable)
+     (program : string)
+     (input   : string list)
+              : (string,ast) either =
+	      match parse table program with
+	      | Result a -> Result (toAstP a)
+	      | Error e  -> Error e
 
 and interpretAst (ast : ast) (input : string list) 
   = interpretSL ast {values=[]; input=input; output=[]} 
@@ -745,3 +753,21 @@ and interpretE : expr -> environment -> (string,value) either
   = undefined "interpretE"
 
 (* ****************************************************** *)
+let rec print_parse_tree (t : (string,parseTree) either)  = match t with
+	| Error e   -> print_string e 
+	| Result Node(x,_) ->  print_string x
+;;
+
+let rec print_list (l : string list)  = function 
+	| [] -> print_string ""
+	| x::xt -> print_string x
+;;
+
+let sentence = "read a
+read b
+sum := a + b
+write sum
+write sum / 2";;
+
+let tr = parse (makeParseTable extendedCalcGrammar) sentence;;
+
