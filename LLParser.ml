@@ -722,13 +722,13 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
   = match stmt with
     | Assign (id, exp) ->
       Error "interpretS: Unimplemented Assign"
-    | Read (id) ->
+    | Read id ->
       (match env.input with
       | line :: rest ->
         let newEnv = updateEnv id env (int_of_string line) in
         Result {values=newEnv.values; input=rest; output=newEnv.output}
       | [] -> Error "Missing input to read")
-    | Write (exp) ->
+    | Write exp ->
       interpretE exp env >>= (fun v ->
         let line = string_of_int v in
         Result {values=env.values; input=env.input; output=line :: env.output})
@@ -740,8 +740,19 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
 and interpretCond : cond -> environment -> (string,bool) either
   = undefined "interpretCond"
 
-and interpretE : expr -> environment -> (string,value) either
-  = undefined "interpretE"
+and interpretE : expr -> environment -> (string,value) either = function
+  | Lit v -> fun env -> Result v
+  | Var id -> fun env -> lookupEnv id env
+  | Op (op, exp1, exp2) -> fun env ->
+    interpretE exp1 env >>= (fun v1 ->
+      interpretE exp2 env >>= (fun v2 ->
+        match op with
+        | "-" -> Result (v1 - v2)
+        | "+" -> Result (v1 + v2)
+        | "/" -> Result (v1 / v2)
+        | "*" -> Result (v1 * v2)
+        | _ -> Error ("Unknown operator "^op^"!")))
+
 
 (* ****************************************************** *)
 
