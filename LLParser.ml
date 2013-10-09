@@ -644,19 +644,22 @@ and toAstS : parseTree -> statement = function
 (* Here you will want a pattern match on each LHS matching
    each RHS of the Statement data type (Assign, Read, ...). *)
   | Node("S",[Node("read",[]); Node(x,[])])              -> Read x
-  | Node("S",[Node(x,[]); Node(":=",[]); Node("E",[e])]) -> Assign(x,toAstE e)
-  | Node("S",[Node ("write",[]); Node("E",[e])])         -> Write(toAstE e)
-  | Node("S",[Node ("if",[]); Node("C",[c]); Node("SL",[sl]); Node("end",[])]) -> If(toAstC c,toAstSL sl)
-  | Node("S",[Node ("while",[]); Node("C",[c]); Node("SL",[sl]);Node("end",[])]) -> While(toAstC c,toAstSL sl)
+  | Node("S",[Node(x,[]); Node(":=",[]); e]) -> Assign(x,toAstE e)
+  | Node("S",[Node ("write",[]); e])         -> Write(toAstE e)
+  | Node("S",[Node ("if",[]); c; sl; Node("end",[])]) -> If(toAstC c,toAstSL sl)
+  | Node("S",[Node ("while",[]); c; sl;Node("end",[])]) -> While(toAstC c,toAstSL sl)
   | _ -> undefined "S fail" ()
 
 and toAstC : parseTree -> cond = function
-  | Node("C",[Node("E",[e2]); Node("rn",[]);Node(rn,[]);Node("E",[e1])]); -> Cond(toAstE e1,rn,toAstE e2)
+  | Node("C",[e1; Node("rn",[]); Node(rn,[]);e2]) -> Cond(rn,toAstE e1,toAstE e2)
   | _ -> undefined "toAstC" ()
 
 (* You can write 'toAstE' as a pair of functions.  The
    first handling the E, T, or F cases: *)
 and toAstE : parseTree -> expr = function
+  | Node ("E",[t; Node("TT",[o;tt])])  -> OP(o,toAstE t, toAstE tt)
+  | Node ("T",[f]) 		       -> toAstE f
+  | Node ("F",[Node(x,[])])            -> Var(x) | Lit(x)
 (* First the base cases from 'F'
   | Node ("F", ...) -> ...
   | Node ("F", ...) -> ...
