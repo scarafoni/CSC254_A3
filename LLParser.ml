@@ -724,13 +724,16 @@ and interpretAst (ast : ast) (input : string list)
       | Error s  -> Error s
       | Result e -> Result (List.rev e.output) *)
 
-and interpretSL : statement list -> environment -> (string,environment) either
-  = undefined "interpretSL"
+and interpretSL : statement list -> environment -> (string,environment) either = function
+  | [] -> (fun env -> Result env)
+  | stmt :: rest -> (fun env ->
+      interpretS stmt env >>= interpretSL rest)
 
 and interpretS (stmt : statement) (env : environment) : (string,environment) either
   = match stmt with
     | Assign (id, exp) ->
-      Error "interpretS: Unimplemented Assign"
+      interpretE exp env >>= (fun v ->
+        Result (updateEnv id env v))
     | Read id ->
       (match env.input with
       | line :: rest ->
@@ -742,9 +745,13 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
         let line = string_of_int v in
         Result {values=env.values; input=env.input; output=line :: env.output})
     | If (cnd, stmts) ->
-      Error "interpretS: Unimplemented If"
+      interpretCond cnd env >>= (function
+        | true -> interpretSL stmts env
+        | false -> Result env)
     | While (cnd, stmts) ->
-      Error "interpretS: Unimplemented While"
+      let rec pass env = interpretCond cnd env >>= (function
+        | true -> interpretSL stmts env >>= pass
+        | false -> Result env) in pass env
 
 and interpretCond : cond -> environment -> (string,bool) either = function
   Cond (comp, exp1, exp2) -> fun env ->
