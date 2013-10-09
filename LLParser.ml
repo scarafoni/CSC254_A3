@@ -636,15 +636,22 @@ let rec toAstP : parseTree -> ast = function
 (* Replace the 'something' with a pattern match which will bind the
    correct 's' and 'sl' so the RHS can be:  toAstS s :: toAstSL sl  *)
 and toAstSL : parseTree -> ast = function
-  | Node ("SL",[s;sl]) -> [toAstS s]@ toAstSL sl
+  | Node ("SL",[s;sl]) -> print_string "test"; [toAstS s]@ (toAstSL sl)
+  | Node ("SL",[])     -> []
   | _                  -> []
 
 and toAstS : parseTree -> statement = function
 (* Here you will want a pattern match on each LHS matching
    each RHS of the Statement data type (Assign, Read, ...). *)
-  | Node ("S",_) -> undefined "S" ()
+  | Node("S",[Node("read",[]); Node(x,[])])              -> Read x
+  | Node("S",[Node(x,[]); Node(":=",[]); Node("E",[e])]) -> Assign(x,toAstE e)
+  | Node("S",[Node ("write",[]); Node("E",[e])])         -> Write(toAstE e)
+  | Node("S",[Node ("if",[]); Node("C",[c]); Node("SL",[sl]); Node("end",[])]) -> If(toAstC c,toAstSL sl)
+  | Node("S",[Node ("while",[]); Node("C",[c]); Node("SL",[sl]);Node("end",[])]) -> While(toAstC c,toAstSL sl)
+  | _ -> undefined "S fail" ()
 
 and toAstC : parseTree -> cond = function
+  | Node("C",[Node("E",[e2]); Node("rn",[]);Node(rn,[]);Node("E",[e1])]); -> Cond(toAstE e1,rn,toAstE e2)
   | _ -> undefined "toAstC" ()
 
 (* You can write 'toAstE' as a pair of functions.  The
@@ -763,8 +770,9 @@ let rec interpret2
      (program : string)
      (input   : string list)
               : (string,ast) either =
+	      Printf.printf "%s" "in interpret";
 	      match parse table program with
-	      | Result a -> Result (toAstP a)
+	      | Result a -> (print_string "interpret"); Result (toAstP a)
 	      | Error e  -> Error e
 
 let rec print_parse_tree (t : (string,parseTree) either)  = match t with
@@ -772,10 +780,14 @@ let rec print_parse_tree (t : (string,parseTree) either)  = match t with
 	| Result Node(x,_) ->  print_string x
 ;;
 
-let rec print_list (l : string list)  = function 
-	| [] -> print_string ""
-	| x::xt -> print_string x
+let rec printAST (a: (string,ast) either)  = match a with
+	|Error e           -> print_string e; ()
+	|Result (Read s::st) -> print_string s; ()
+	|_ -> ()
 ;;
+
+let rec print_list = function
+	| _ -> print_string "print list";;
 
 let sentence = "read a
 read b
@@ -783,5 +795,5 @@ sum := a + b
 write sum
 write sum / 2";;
 
-let tr = parse (makeParseTable extendedCalcGrammar) sentence;;
-interpret2 (makeParseTable extendedCalcGrammar) sentence
+let r = "read a";;
+let ss = interpret2 (makeParseTable extendedCalcGrammar) r;;
