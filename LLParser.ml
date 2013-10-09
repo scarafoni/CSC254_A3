@@ -107,6 +107,16 @@ let rec lookup (s : 'k) : ('k * 'v) list -> 'v option = function
                      then Some v
                      else lookup s xs
 
+(* Set a value associated with a given key in an association list. *)
+let rec set (k : 'k) (v : 'v) (xs : ('k * 'v) list) : ('k * 'v) list =
+  []
+  (*
+  | [] -> [(k,v)]
+  | (k,_) :: tail -> (k,v) :: tail
+  | x :: tail -> x :: set k v tail
+  *)
+
+
 (* Map over an option if the value is a Some otherwise use the
    given default value. *)
 let map_default (f : 'a -> 'b) (d : 'b) : 'a option -> 'b = function
@@ -682,11 +692,13 @@ type environment =
 
 (* Be sure to understand this type!  Use 'Error' values to
    indicate errors. *)
-let lookupEnv (n : string) (e : environment) : (string,value) either
-  = undefined "lookupEnv" ()
+let lookupEnv (n : string) (e : environment) : (string,value) either =
+  match lookup n e.values with
+  | None -> Error ("Value for "^n^" not found.")
+  | Some v -> Result v
 
-let updateEnv (n : string) (e : environment) (v : value) : environment
-  = undefined "updateEnv" ()
+let updateEnv (n : string) (e : environment) (v : value) : environment =
+  {values=(set n v e.values); input=e.input; output=e.output}
 
 (* IO *)
 
