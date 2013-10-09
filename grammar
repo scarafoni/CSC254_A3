@@ -27,5 +27,44 @@ F -> id
 F -> num
 F -> (E )		#( is left child, E is middle, ) is right
 
-note= need "hoisting" function for AST, this takes a child, replaces the parent node with its value, then elminates the child
+nste= need "hoisting" function for AST, this takes a child, replaces the parent node with its value, then elminates the child
 next statement is added to right of tree if the tree is fully derived
+
+
+ (Node ("P",
+       [Node ("SL",
+         [Node ("S", [Node ("read", []); Node ("a", [])]);
+          Node ("SL",
+           [Node ("S", [Node ("read", []); Node ("b", [])]);
+            Node ("SL",
+             [Node ("S",
+               [Node ("sum", []); Node (":=", []);
+                Node ("E",
+                 [Node ("T", [Node ("F", [Node ("a", [])]); Node ("FT", [])]);
+                  Node ("TT",
+                   [Node ("ao", [Node ("+", [])]);
+                    Node ("T", [Node ("F", [Node ("b", [])]); Node ("FT", [])]);
+                    Node ("TT", [])])])]);
+              Node ("SL",
+               [Node ("S",
+                 [Node ("write", []);
+                  Node ("E",
+                   [Node ("T",
+                     [Node ("F", [Node ("sum", [])]); Node ("FT", [])]);
+                    Node ("TT", [])])]);
+                Node ("SL",
+                 [Node ("S",
+                   [Node ("write", []);
+                    Node ("E",
+                     [Node ("T",
+                       [Node ("F", [Node ("sum", [])]);
+                        Node ("FT",
+                         [Node ("mo", [Node ("/", [])]);
+                          Node ("F", [Node ("2", [])]); Node ("FT", [])])]);
+                    Node ("TT", [])])]);
+                    Node ("SL", [])])])])])])]))
+
+
+
+
+

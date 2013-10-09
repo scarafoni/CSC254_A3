@@ -642,7 +642,7 @@ and toAstSL : parseTree -> ast = function
 and toAstS : parseTree -> statement = function
 (* Here you will want a pattern match on each LHS matching
    each RHS of the Statement data type (Assign, Read, ...). *)
-  | Node ("S",["read";[]] -> 
+  | Node ("S",_) -> undefined "S" ()
 
 and toAstC : parseTree -> cond = function
   | _ -> undefined "toAstC" ()
