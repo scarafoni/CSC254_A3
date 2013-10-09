@@ -746,8 +746,18 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
     | While (cnd, stmts) ->
       Error "interpretS: Unimplemented While"
 
-and interpretCond : cond -> environment -> (string,bool) either
-  = undefined "interpretCond"
+and interpretCond : cond -> environment -> (string,bool) either = function
+  Cond (comp, exp1, exp2) -> fun env ->
+    interpretE exp1 env >>= (fun v1 ->
+      interpretE exp2 env >>= (fun v2 ->
+        match comp with
+        | "==" -> Result (v1 == v2)
+        | "!=" -> Result (v1 != v2)
+        | "<"  -> Result (v1 < v2)
+        | ">"  -> Result (v1 > v2)
+        | "<=" -> Result (v1 <= v2)
+        | ">=" -> Result (v1 >= v2)
+        | _ -> Error ("Unknown comparison operator "^comp^"!")))
 
 and interpretE : expr -> environment -> (string,value) either = function
   | Lit v -> fun env -> Result v
