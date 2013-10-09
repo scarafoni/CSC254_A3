@@ -107,6 +107,16 @@ let rec lookup (s : 'k) : ('k * 'v) list -> 'v option = function
                      then Some v
                      else lookup s xs
 
+(* Set a value associated with a given key in an association list. *)
+let rec set (k : 'k) (v : 'v) (xs : ('k * 'v) list) : ('k * 'v) list =
+  []
+  (*
+  | [] -> [(k,v)]
+  | (k,_) :: tail -> (k,v) :: tail
+  | x :: tail -> x :: set k v tail
+  *)
+
+
 (* Map over an option if the value is a Some otherwise use the
    given default value. *)
 let map_default (f : 'a -> 'b) (d : 'b) : 'a option -> 'b = function
@@ -685,11 +695,13 @@ type environment =
 
 (* Be sure to understand this type!  Use 'Error' values to
    indicate errors. *)
-let lookupEnv (n : string) (e : environment) : (string,value) either
-  = undefined "lookupEnv" ()
+let lookupEnv (n : string) (e : environment) : (string,value) either =
+  match lookup n e.values with
+  | None -> Error ("Value for "^n^" not found.")
+  | Some v -> Result v
 
-let updateEnv (n : string) (e : environment) (v : value) : environment
-  = undefined "updateEnv" ()
+let updateEnv (n : string) (e : environment) (v : value) : environment =
+  {values=(set n v e.values); input=e.input; output=e.output}
 
 (* IO *)
 
@@ -727,13 +739,16 @@ and interpretAst (ast : ast) (input : string list)
       | Error s  -> Error s
       | Result e -> Result (List.rev e.output) *)
 
-and interpretSL : statement list -> environment -> (string,environment) either
-  = undefined "interpretSL"
+and interpretSL : statement list -> environment -> (string,environment) either = function
+  | [] -> (fun env -> Result env)
+  | stmt :: rest -> (fun env ->
+      interpretS stmt env >>= interpretSL rest)
 
 and interpretS (stmt : statement) (env : environment) : (string,environment) either
   = match stmt with
     | Assign (id, exp) ->
-      Error "interpretS: Unimplemented Assign"
+      interpretE exp env >>= (fun v ->
+        Result (updateEnv id env v))
     | Read id ->
       (match env.input with
       | line :: rest ->
@@ -745,25 +760,43 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
         let line = string_of_int v in
         Result {values=env.values; input=env.input; output=line :: env.output})
     | If (cnd, stmts) ->
-      Error "interpretS: Unimplemented If"
+      interpretCond cnd env >>= (function
+        | true -> interpretSL stmts env
+        | false -> Result env)
     | While (cnd, stmts) ->
-      Error "interpretS: Unimplemented While"
+      let rec pass env = interpretCond cnd env >>= (function
+        | true -> interpretSL stmts env >>= pass
+        | false -> Result env) in pass env
 
-and interpretCond : cond -> environment -> (string,bool) either
-  = undefined "interpretCond"
+and interpretCond : cond -> environment -> (string,bool) either = function
+  Cond (comp, exp1, exp2) -> fun env ->
+    (match comp with
+      | "==" -> Result (==)
+      | "!=" -> Result (!=)
+      | "<"  -> Result (<)
+      | ">"  -> Result (>)
+      | "<=" -> Result (<=)
+      | ">=" -> Result (>=)
+      | _ -> Error ("Unknown comparison operator "^comp^"!"))
+    >>= (fun cmp ->
+      interpretE exp1 env >>= (fun v1 ->
+        interpretE exp2 env >>= (fun v2 ->
+          Result (cmp v1 v2))))
 
 and interpretE : expr -> environment -> (string,value) either = function
   | Lit v -> fun env -> Result v
-  | Var id -> fun env -> lookupEnv id env
-  | Op (op, exp1, exp2) -> fun env ->
-    interpretE exp1 env >>= (fun v1 ->
-      interpretE exp2 env >>= (fun v2 ->
-        match op with
-        | "-" -> Result (v1 - v2)
-        | "+" -> Result (v1 + v2)
-        | "/" -> Result (v1 / v2)
-        | "*" -> Result (v1 * v2)
-        | _ -> Error ("Unknown operator "^op^"!")))
+  | Var id -> lookupEnv id
+  | Op (opName, exp1, exp2) -> fun env ->
+    (match opName with
+      | "-" -> Result (-)
+      | "+" -> Result (+)
+      | "/" -> Result (/)
+      | "*" -> Result ( * )
+      | _ -> Error ("Unknown operator "^opName^"!"))
+    >>= (fun op ->
+      interpretE exp1 env >>= (fun v1 ->
+        interpretE exp2 env >>= (fun v2 ->
+          Result (op v1 v2))))
 
 
 (* ****************************************************** *)

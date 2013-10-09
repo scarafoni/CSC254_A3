@@ -1,0 +1,6 @@
+.*.swp
+*.out
+*.cmi
+*.cmo
+*.exe
+.nfs*
