@@ -667,9 +667,10 @@ and toAstC : parseTree -> cond = function
 (* You can write 'toAstE' as a pair of functions.  The
    first handling the E, T, or F cases: *)
 and toAstE : parseTree -> expr = function
-  | Node ("E",[t; Node("TT",[o;tt])])  -> OP(o,toAstE t, toAstE tt)
-  | Node ("T",[f]) 		       -> toAstE f
-  | Node ("F",[Node(x,[])])            -> Var(x) | Lit(x)
+  | Node("E",[t;tt])                -> toAstETail (toAstE t) tt
+  | Node("T",[f;ft])                -> toAstETail (toAstE f) ft
+  | Node("F",[Node((x: ident),[])]) -> Var(x)
+  | Node("F",[Node((int_of_string (x: value)),[])]) -> Lit(x)
 (* First the base cases from 'F'
   | Node ("F", ...) -> ...
   | Node ("F", ...) -> ...
@@ -679,6 +680,7 @@ and toAstE : parseTree -> expr = function
 
 (* The second function 'toAstETail' handles TT and FT *)
 and toAstETail (e : expr) : parseTree -> expr = function
+   | Node("TT",[Node("ao",[Node(ao,[])]);t;tt]) -> Op(ao,toAstE t,toAstETail tt)
 (* | Node (_, ...) -> ... (toAstE ...) ... *)
    | _ -> undefined "toAstETail" ()
 
