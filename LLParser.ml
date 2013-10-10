@@ -669,7 +669,7 @@ and toAstE : parseTree -> expr = function
   | Node("E",[t;tt])                -> toAstETail (toAstE t) tt
   | Node("T",[f;ft])                -> toAstETail (toAstE f) ft
   | Node("F",[Node(x,[])]) ->( try Lit((int_of_string x)) with
-  	| Failure _ -> print_string (x^" not an integer\n"); Var(x))
+  	| Failure _ -> Var(x))
   | Node("F",[Node("(",[]);e;Node(")",[])]) -> toAstE e
 
 
