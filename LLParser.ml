@@ -646,7 +646,7 @@ let rec toAstP : parseTree -> ast = function
 (* Replace the 'something' with a pattern match which will bind the
    correct 's' and 'sl' so the RHS can be:  toAstS s :: toAstSL sl  *)
 and toAstSL : parseTree -> ast = function
-  | Node ("SL",[s;sl]) -> print_string "test"; [toAstS s]@ (toAstSL sl)
+  | Node ("SL",[s;sl]) -> [toAstS s]@ (toAstSL sl)
   | Node ("SL",[])     -> []
   | _                  -> []
 
@@ -669,8 +669,10 @@ and toAstC : parseTree -> cond = function
 and toAstE : parseTree -> expr = function
   | Node("E",[t;tt])                -> toAstETail (toAstE t) tt
   | Node("T",[f;ft])                -> toAstETail (toAstE f) ft
-  | Node("F",[Node((x: ident),[])]) -> Var(x)
-  | Node("F",[Node((int_of_string (x: value)),[])]) -> Lit(x)
+  | Node("F",[Node(x,[])]) -> try Lit((int_of_string x)) with
+  	| _ -> Var(x)
+  | Node("F",[Node("(",[]);e;Node(")",[])]) -> toAstE e
+  (*| Node("F",[Node((int_of_string x : value),[])]) -> Lit(x)*)
 (* First the base cases from 'F'
   | Node ("F", ...) -> ...
   | Node ("F", ...) -> ...
@@ -680,7 +682,10 @@ and toAstE : parseTree -> expr = function
 
 (* The second function 'toAstETail' handles TT and FT *)
 and toAstETail (e : expr) : parseTree -> expr = function
-   | Node("TT",[Node("ao",[Node(ao,[])]);t;tt]) -> Op(ao,toAstE t,toAstETail tt)
+   | Node("TT",[Node("ao",[Node(ao,[])]);t;tt]) -> Op(ao,toAstE t,(toAstETail (toAstE t) tt))
+   | Node("TT",[])                              -> e
+   | Node("FT",[Node("mo",[Node(mo,[])]);f;ft]) -> Op(mo,toAstE f,(toAstETail (toAstE f) ft))
+   | Node("FT",[])                              -> e
 (* | Node (_, ...) -> ... (toAstE ...) ... *)
    | _ -> undefined "toAstETail" ()
 
@@ -803,35 +808,26 @@ and interpretE : expr -> environment -> (string,value) either = function
 
 (* ****************************************************** *)
 
-let rec interpret2
+let interpret2
      (table   : parseTable)
      (program : string)
-     (input   : string list)
               : (string,ast) either =
-	      Printf.printf "%s" "in interpret";
-	      match parse table program with
-	      | Result a -> (print_string "interpret"); Result (toAstP a)
+	      match (parse table program) with
+	      | Result a -> Result (toAstP a)
 	      | Error e  -> Error e
 
-let rec print_parse_tree (t : (string,parseTree) either)  = match t with
-	| Error e   -> print_string e 
-	| Result Node(x,_) ->  print_string x
-;;
+let errorTest (x : string) =
+	try int_of_string(x) with
+	| _ -> print_string "no good"; 3
+	;;
 
-let rec printAST (a: (string,ast) either)  = match a with
-	|Error e           -> print_string e; ()
-	|Result (Read s::st) -> print_string s; ()
-	|_ -> ()
-;;
+let t1 = "read a"  ;;
 
-let rec print_list = function
-	| _ -> print_string "print list";;
-
-let sentence = "read a
+let t2 = "read a
 read b
-sum := a + b
-write sum
-write sum / 2";;
+write a
+write b
+sum := 1 + (2 * 2) + 2";;
 
-let r = "read a";;
-let ss = interpret2 (makeParseTable extendedCalcGrammar) r;;
+let ss = interpret2 (makeParseTable extendedCalcGrammar) t2;;
+t2;;
