@@ -108,13 +108,12 @@ let rec lookup (s : 'k) : ('k * 'v) list -> 'v option = function
                      else lookup s xs
 
 (* Set a value associated with a given key in an association list. *)
-let rec set (k : 'k) (v : 'v) (xs : ('k * 'v) list) : ('k * 'v) list =
-  []
-  (*
+let rec set (k : 'k) (v : 'v) : ('k * 'v) list -> ('k * 'v) list = function
   | [] -> [(k,v)]
-  | (k,_) :: tail -> (k,v) :: tail
-  | x :: tail -> x :: set k v tail
-  *)
+  | (k1,v1) :: tail ->
+    if k1 == k
+      then (k,v) :: tail
+      else (k1,v1) :: set k v tail
 
 
 (* Map over an option if the value is a Some otherwise use the
@@ -724,7 +723,7 @@ let writeEnv (e : environment) (s : string) : environment
 (* The next two functions are complete and illustrate using
    the bind operator >>= to handle errors without our writing explicit
    matching for errors.*)
-let rec interpret 
+let rec interpret
      (table   : parseTable)
      (program : string)
      (input   : string list)
