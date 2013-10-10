@@ -870,9 +870,11 @@ let primes = "
     end";;
 
 let t2 = "read a
+sum := 0
 if a < 3
 	sum := 1 + a
-end";;
+end
+write sum";;
 
 
 let tree = parse (makeParseTable extendedCalcGrammar) t2;;
