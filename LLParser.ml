@@ -863,3 +863,27 @@ end";;
 
 let tree = parse (makeParseTable extendedCalcGrammar) t2;;
 let ss = interpret2 (makeParseTable extendedCalcGrammar) primes;;
+
+let readLines (prompt : string) : string list =
+  print_endline prompt;
+  let rec readLine rest =
+    try
+      let line = input_line stdin in
+        readLine (line :: rest)
+    with
+      End_of_file -> [] in
+  readLine [];;
+
+let rec printLines = function
+  | [] -> ()
+  | line :: tail -> (print_endline line; printLines tail);;
+
+(* Run the parser and interpreter using a grammar and program, and stdio *)
+let driver grammar (program : string) =
+  let table = makeParseTable grammar and
+    input = readLines "Enter numbers, one per line, followed by ^D" in
+  match interpret table program input with
+  | Error e -> print_endline ("Error: "^e)
+  | Result output -> printLines output;;
+
+driver extendedCalcGrammar t2;;
