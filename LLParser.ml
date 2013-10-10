@@ -653,7 +653,7 @@ and toAstSL : parseTree -> ast = function
 and toAstS : parseTree -> statement = function
 (* Here you will want a pattern match on each LHS matching
    each RHS of the Statement data type (Assign, Read, ...). *)
-  | Node("S",[Node("read",[]); Node(x,[])])              -> Read x
+  | Node("S",[Node("read",[]); Node(x,[])])              -> Read(x)
   | Node("S",[Node(x,[]); Node(":=",[]); e]) -> Assign(x,toAstE e)
   | Node("S",[Node ("write",[]); e])         -> Write(toAstE e)
   | Node("S",[Node ("if",[]); c; sl; Node("end",[])]) -> If(toAstC c,toAstSL sl)
@@ -661,7 +661,7 @@ and toAstS : parseTree -> statement = function
   | _ -> undefined "S fail" ()
 
 and toAstC : parseTree -> cond = function
-  | Node("C",[e1; Node("rn",[]); Node(rn,[]);e2]) -> Cond(rn,toAstE e1,toAstE e2)
+  | Node("C",[e1; Node("rn",[Node(rn,[])]);e2]) -> Cond(rn,toAstE e1,toAstE e2)
   | _ -> undefined "toAstC" ()
 
 (* You can write 'toAstE' as a pair of functions.  The
@@ -669,9 +669,11 @@ and toAstC : parseTree -> cond = function
 and toAstE : parseTree -> expr = function
   | Node("E",[t;tt])                -> toAstETail (toAstE t) tt
   | Node("T",[f;ft])                -> toAstETail (toAstE f) ft
-  | Node("F",[Node(x,[])]) -> Var(x) (* try Lit((int_of_string x)) with
-  	| _ -> Var(x)*)
+  | Node("F",[Node(x,[])]) ->( try Lit((int_of_string x)) with
+  	| Failure _ -> print_string (x^" not an integer\n"); Var(x))
   | Node("F",[Node("(",[]);e;Node(")",[])]) -> toAstE e
+
+
   (*| Node("F",[Node((int_of_string x : value),[])]) -> Lit(x)*)
 (* First the base cases from 'F'
   | Node ("F", ...) -> ...
@@ -682,9 +684,9 @@ and toAstE : parseTree -> expr = function
 
 (* The second function 'toAstETail' handles TT and FT *)
 and toAstETail (e : expr) : parseTree -> expr = function
-   | Node("TT",[Node("ao",[Node(ao,[])]);t;tt]) -> Op(ao,toAstE t,(toAstETail (toAstE t) tt))
+   | Node("TT",[Node("ao",[Node(ao,[])]);t;tt]) -> Op(ao,e,(toAstETail (toAstE t) tt))
    | Node("TT",[])                              -> e
-   | Node("FT",[Node("mo",[Node(mo,[])]);f;ft]) -> Op(mo,toAstE f,(toAstETail (toAstE f) ft))
+   | Node("FT",[Node("mo",[Node(mo,[])]);f;ft]) -> Op(mo,e,(toAstETail (toAstE f) ft))
    | Node("FT",[])                              -> e
 (* | Node (_, ...) -> ... (toAstE ...) ... *)
    | _ -> undefined "toAstETail" ()
@@ -821,13 +823,44 @@ let errorTest (x : string) =
 	| _ -> print_string "no good"; 3
 	;;
 
-let t1 = "read a"  ;;
+
+let t1 = "read a
+read b
+sum := a + 1";;
+
+
+let primes = "
+    read n
+    cp := 2
+    while n > 0
+        found := 0
+        cf1 := 2
+        cf1s := cf1 * cf1
+        while cf1s <= cp
+            cf2 := 2
+            pr := cf1 * cf2
+            while pr <= cp
+                if pr == cp
+                    found := 1
+                end
+                cf2 := cf2 + 1
+                pr := cf1 * cf2
+            end
+            cf1 := cf1 + 1
+            cf1s := cf1 * cf1
+        end
+        if found == 0
+            write cp
+            n := n - 1
+        end
+        cp := cp + 1
+    end";;
 
 let t2 = "read a
-read b
-write a
-write b
-sum := 1 + (2 * 2) + 2";;
+if a < 3
+	sum := 1 + a
+end";;
 
-let ss = interpret2 (makeParseTable extendedCalcGrammar) t2;;
-t2;;
+
+let tree = parse (makeParseTable extendedCalcGrammar) t2;;
+let ss = interpret2 (makeParseTable extendedCalcGrammar) primes;;
