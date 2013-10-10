@@ -669,8 +669,8 @@ and toAstC : parseTree -> cond = function
 and toAstE : parseTree -> expr = function
   | Node("E",[t;tt])                -> toAstETail (toAstE t) tt
   | Node("T",[f;ft])                -> toAstETail (toAstE f) ft
-  | Node("F",[Node(x,[])]) -> try Lit((int_of_string x)) with
-  	| _ -> Var(x)
+  | Node("F",[Node(x,[])]) -> Var(x) (* try Lit((int_of_string x)) with
+  	| _ -> Var(x)*)
   | Node("F",[Node("(",[]);e;Node(")",[])]) -> toAstE e
   (*| Node("F",[Node((int_of_string x : value),[])]) -> Lit(x)*)
 (* First the base cases from 'F'
