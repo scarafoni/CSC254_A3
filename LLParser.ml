@@ -719,6 +719,20 @@ let readEnv (e : environment) : (string,environment*value) either
 let writeEnv (e : environment) (s : string) : environment
   = undefined "writeEnv" ()
 
+let readLines (prompt : string) : string list =
+  print_endline prompt;
+  let rec readLine rest =
+    try
+      let line = input_line stdin in
+        readLine (line :: rest)
+    with
+      End_of_file -> rest in
+  readLine [];;
+
+let rec printLines = function
+  | [] -> ()
+  | line :: tail -> (print_endline line; printLines tail);;
+
 (* ******************************************************* *)
 (* The next two functions are complete and illustrate using
    the bind operator >>= to handle errors without our writing explicit
@@ -863,20 +877,6 @@ end";;
 
 let tree = parse (makeParseTable extendedCalcGrammar) t2;;
 let ss = interpret2 (makeParseTable extendedCalcGrammar) primes;;
-
-let readLines (prompt : string) : string list =
-  print_endline prompt;
-  let rec readLine rest =
-    try
-      let line = input_line stdin in
-        readLine (line :: rest)
-    with
-      End_of_file -> [] in
-  readLine [];;
-
-let rec printLines = function
-  | [] -> ()
-  | line :: tail -> (print_endline line; printLines tail);;
 
 (* Run the parser and interpreter using a grammar and program, and stdio *)
 let driver grammar (program : string) =
