@@ -830,8 +830,10 @@ let rec generateCCode
       Result (toCAst ast))
 
 and toCAst (ast : ast) : string list =
-  ["int main() {"] @
-    (toCStmtList 1 ast)
+  "#include <stdio.h>" ::
+  "int main()" ::
+  "{" ::
+  (toCStmtList 1 ast)
 
 and toCStmtList (depth : int) (stmts : statement list) : string list =
   let indent = String.make ((depth-1)*4) ' ' in
@@ -846,9 +848,9 @@ and toCStmt (depth : int) (stmt : statement) : string list =
   | Assign (id, exp) ->
     [indent^id^" = "^(toCExpr exp)^";"]
   | Read id ->
-    [indent^"getline(&"^id^");"]
+    [indent^"scanf(\"%d\\n\", &"^id^");"]
   | Write exp ->
-    [indent^"printf("^(toCExpr exp)^");"]
+    [indent^"printf(\"%d\\n\", "^(toCExpr exp)^");"]
   | If (cnd, stmts) ->
     (indent^"if ("^(toCCond cnd)^") {") ::
       (toCStmtList (depth+1) stmts)
