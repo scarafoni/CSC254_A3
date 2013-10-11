@@ -111,7 +111,7 @@ let rec lookup (s : 'k) : ('k * 'v) list -> 'v option = function
 let rec set (k : 'k) (v : 'v) : ('k * 'v) list -> ('k * 'v) list = function
   | [] -> [(k,v)]
   | (k1,v1) :: tail ->
-    if k1 == k
+    if k1 = k
       then (k,v) :: tail
       else (k1,v1) :: set k v tail
 
@@ -775,7 +775,7 @@ and interpretS (stmt : statement) (env : environment) : (string,environment) eit
       (match env.input with
       | line :: rest ->
         let newEnv = updateEnv id env (int_of_string line) in
-        Result {values=newEnv.values; input=rest; output=newEnv.output}
+        Result({values=newEnv.values; input=rest; output=newEnv.output})
       | [] -> Error "Missing input to read")
     | Write exp ->
       interpretE exp env >>= (fun v ->
@@ -876,6 +876,19 @@ if a < 3
 end
 write sum";;
 
+let t3 = 
+"read x
+sum := 0
+if x == 3
+	sum := 4
+	write sum
+end
+write sum";;
+
+let t4 = 
+"x := 4
+ x:= 2
+ write x";;
 
 let tree = parse (makeParseTable extendedCalcGrammar) t2;;
 let ss = interpret2 (makeParseTable extendedCalcGrammar) primes;;
@@ -888,4 +901,4 @@ let driver grammar (program : string) =
   | Error e -> print_endline ("Error: "^e)
   | Result output -> printLines output;;
 
-driver extendedCalcGrammar t2;;
+driver extendedCalcGrammar primes;;
