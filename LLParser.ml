@@ -856,11 +856,15 @@ and toCStmt (depth : int) (stmt : statement) : string list =
     (indent^"while ("^(toCCond cnd)^") {") ::
       (toCStmtList (depth+1) stmts)
 
-and toCCond (cnd : cond) : string =
-  "cond"
+and toCCond : cond -> string = function
+  | Cond (op, exp1, exp2) ->
+    (toCExpr exp1)^" "^op^" "^(toCExpr exp2)
 
-and toCExpr (exp : expr) : string =
-  "expr"
+and toCExpr : expr -> string = function
+  | Lit v -> string_of_int v
+  | Var id -> id
+  | Op (op, exp1, exp2) ->
+    (toCExpr exp1)^" "^op^" "^(toCExpr exp2)
 
 (* ****************************************************** *)
 
