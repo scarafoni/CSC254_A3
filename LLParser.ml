@@ -831,26 +831,30 @@ let rec generateCCode
 
 and toCAst (ast : ast) : string list =
   ["int main() {"] @
-    (toCStmtList ast)
+    (toCStmtList 1 ast)
 
-and toCStmtList : statement list -> string list = function
-  | [] -> ["}"]
+and toCStmtList (depth : int) (stmts : statement list) : string list =
+  let indent = String.make ((depth-1)*4) ' ' in
+  match stmts with
+  | [] -> [indent^"}"]
   | stmt :: rest ->
-    (toCStmt stmt) @ (toCStmtList rest)
+    (toCStmt depth stmt) @ (toCStmtList depth rest)
 
-and toCStmt : statement -> string list = function
+and toCStmt (depth : int) (stmt : statement) : string list =
+  let indent = String.make (depth*4) ' ' in
+  match stmt with
   | Assign (id, exp) ->
-    [id^" = "^(toCExpr exp)^";"]
+    [indent^id^" = "^(toCExpr exp)^";"]
   | Read id ->
-    ["getline(&"^id^");"]
+    [indent^"getline(&"^id^");"]
   | Write exp ->
-    ["printf("^(toCExpr exp)^");"]
+    [indent^"printf("^(toCExpr exp)^");"]
   | If (cnd, stmts) ->
-    ("if ("^(toCCond cnd)^") {") ::
-      (toCStmtList stmts)
+    (indent^"if ("^(toCCond cnd)^") {") ::
+      (toCStmtList (depth+1) stmts)
   | While (cnd, stmts) ->
-    ("while ("^(toCCond cnd)^") {") ::
-      (toCStmtList stmts)
+    (indent^"while ("^(toCCond cnd)^") {") ::
+      (toCStmtList (depth+1) stmts)
 
 and toCCond (cnd : cond) : string =
   "cond"
