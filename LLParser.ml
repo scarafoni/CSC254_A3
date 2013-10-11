@@ -727,7 +727,7 @@ let readLines (prompt : string) : string list =
         readLine (line :: rest)
     with
       End_of_file -> rest in
-  readLine [];;
+  List.rev (readLine []);;
 
 let rec printLines = function
   | [] -> ()
