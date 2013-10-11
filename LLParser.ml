@@ -820,6 +820,43 @@ and interpretE : expr -> environment -> (string,value) either = function
         interpretE exp2 env >>= (fun v2 ->
           Result (op v1 v2))))
 
+(* Generate C code from an AST *)
+let rec generateCCode
+  (table : parseTable)
+  (program : string)
+  : (string,string list) either
+  = parse table program >>= (fun t ->
+      let ast = toAstP t in
+      Result (toCAst ast))
+
+and toCAst (ast : ast) : string list =
+  ["int main() {"] @
+    (toCStmtList ast)
+
+and toCStmtList : statement list -> string list = function
+  | [] -> ["}"]
+  | stmt :: rest ->
+    (toCStmt stmt) @ (toCStmtList rest)
+
+and toCStmt : statement -> string list = function
+  | Assign (id, exp) ->
+    [id^" = "^(toCExpr exp)^";"]
+  | Read id ->
+    ["getline(&"^id^");"]
+  | Write exp ->
+    ["printf("^(toCExpr exp)^");"]
+  | If (cnd, stmts) ->
+    ("if ("^(toCCond cnd)^") {") ::
+      (toCStmtList stmts)
+  | While (cnd, stmts) ->
+    ("while ("^(toCCond cnd)^") {") ::
+      (toCStmtList stmts)
+
+and toCCond (cnd : cond) : string =
+  "cond"
+
+and toCExpr (exp : expr) : string =
+  "expr"
 
 (* ****************************************************** *)
 
@@ -830,11 +867,6 @@ let interpret2
 	      match (parse table program) with
 	      | Result a -> Result (toAstP a)
 	      | Error e  -> Error e
-
-let errorTest (x : string) =
-	try int_of_string(x) with
-	| _ -> print_string "no good"; 3
-	;;
 
 
 let t1 = "read a
@@ -890,8 +922,6 @@ let t4 =
  x:= 2
  write x";;
 
-let tree = parse (makeParseTable extendedCalcGrammar) t2;;
-let ss = interpret2 (makeParseTable extendedCalcGrammar) primes;;
 
 (* Run the parser and interpreter using a grammar and program, and stdio *)
 let driver grammar (program : string) =
@@ -901,4 +931,22 @@ let driver grammar (program : string) =
   | Error e -> print_endline ("Error: "^e)
   | Result output -> printLines output;;
 
-driver extendedCalcGrammar primes;;
+
+(* Run the parser on a program from cand generate a C program, using stdout *)
+let cDriver grammar =
+  let table = makeParseTable grammar and
+    lines = readLines "Enter the program, followed by ^D" in
+  let program = String.concat "\n" lines in
+  match generateCCode table program with
+  | Error e -> print_endline ("Error: "^e)
+  | Result cOutput -> printLines cOutput;;
+
+(* If -c argument is given, translate a program into C.
+ * Otherwise, interpret the program. *)
+if Sys.argv.(Array.length Sys.argv - 1) = "-c" then
+  cDriver extendedCalcGrammar
+else
+  driver extendedCalcGrammar primes;;
+
+
+(*let dz = driver extendedCalcGrammar primes;;*)
