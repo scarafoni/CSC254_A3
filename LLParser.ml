@@ -720,7 +720,7 @@ let writeEnv (e : environment) (s : string) : environment
   = undefined "writeEnv" ()
 
 let readLines (prompt : string) : string list =
-  print_endline prompt;
+  prerr_endline prompt;
   let rec readLine rest =
     try
       let line = input_line stdin in
@@ -820,6 +820,14 @@ and interpretE : expr -> environment -> (string,value) either = function
         interpretE exp2 env >>= (fun v2 ->
           Result (op v1 v2))))
 
+module SS = Set.Make(String);;
+
+type scope = SS.t;;
+
+(* declare an ident in a scope *)
+let declare sc id : scope =
+  SS.add id sc;;
+
 (* Generate C code from an AST *)
 let rec generateCCode
   (table : parseTable)
@@ -830,33 +838,49 @@ let rec generateCCode
       Result (toCAst ast))
 
 and toCAst (ast : ast) : string list =
-  "#include <stdio.h>" ::
-  "int main()" ::
-  "{" ::
-  (toCStmtList 1 ast)
+  match (toCStmtList 1 SS.empty ast) with (scope,sl) ->
+    "#include <stdio.h>" ::
+    "int main()" ::
+    "{" ::
+    (toCDecls 1 scope) ::
+    sl
 
-and toCStmtList (depth : int) (stmts : statement list) : string list =
+and toCDecls (depth : int) (sc : scope) : string =
+  let indent = String.make (depth*4) ' ' in
+  indent^"int "^(String.concat ", " (SS.elements sc))^";"
+
+and toCStmtList
+  (depth : int)
+  (sc : scope)
+  (stmts : statement list)
+: (scope * string list) =
   let indent = String.make ((depth-1)*4) ' ' in
   match stmts with
-  | [] -> [indent^"}"]
+  | [] -> (sc, [indent^"}"])
   | stmt :: rest ->
-    (toCStmt depth stmt) @ (toCStmtList depth rest)
+    match (toCStmtList depth sc rest) with (scope,sl) ->
+      match (toCStmt depth scope stmt) with (scope,slInner) ->
+        (scope, slInner @ sl)
 
-and toCStmt (depth : int) (stmt : statement) : string list =
+and toCStmt
+  (depth : int)
+  (sc : scope)
+  (stmt : statement)
+: (scope * string list) =
   let indent = String.make (depth*4) ' ' in
   match stmt with
   | Assign (id, exp) ->
-    [indent^id^" = "^(toCExpr exp)^";"]
+    ((declare sc id), [indent^id^" = "^(toCExpr exp)^";"])
   | Read id ->
-    [indent^"scanf(\"%d\\n\", &"^id^");"]
+    ((declare sc id), [indent^"scanf(\"%d\", &"^id^");"])
   | Write exp ->
-    [indent^"printf(\"%d\\n\", "^(toCExpr exp)^");"]
+    (sc, [indent^"printf(\"%d\\n\", "^(toCExpr exp)^");"])
   | If (cnd, stmts) ->
-    (indent^"if ("^(toCCond cnd)^") {") ::
-      (toCStmtList (depth+1) stmts)
+    (match (toCStmtList (depth+1) sc stmts) with (scope,sl) ->
+      (scope, (indent^"if ("^(toCCond cnd)^") {") :: sl))
   | While (cnd, stmts) ->
-    (indent^"while ("^(toCCond cnd)^") {") ::
-      (toCStmtList (depth+1) stmts)
+    (match (toCStmtList (depth+1) sc stmts) with (scope,sl) ->
+      (scope, (indent^"while ("^(toCCond cnd)^") {") :: sl))
 
 and toCCond : cond -> string = function
   | Cond (op, exp1, exp2) ->
