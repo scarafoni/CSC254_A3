@@ -840,12 +840,12 @@ let rec generateCCode
       Result (toCAst ast))
 
 and toCAst (ast : ast) : string list =
-  match (toCStmtList tab SS.empty ast) with (scope,sl) ->
+  match (toCStmtList tab SS.empty ast []) with (scope,sl) ->
     "#include <stdio.h>" ::
     "int main()" ::
     "{" ::
     (toCDecls tab scope) ::
-    sl
+    List.rev sl
 
 and toCDecls (indent : string) (sc : scope) : string =
   indent^"int "^(String.concat ", " (SS.elements sc))^";"
@@ -854,32 +854,33 @@ and toCStmtList
   (indent : string)
   (sc : scope)
   (stmts : statement list)
+  (linesTail : string list)
 : (scope * string list) =
   match stmts with
-  | [] -> (sc, [indent^"}"])
+  | [] -> (sc, (indent^"}")::linesTail)
   | stmt :: rest ->
-    match (toCStmtList indent sc rest) with (scope,sl) ->
-      match (toCStmt indent scope stmt) with (scope,slInner) ->
-        (scope, slInner @ sl)
+    match (toCStmt indent sc stmt linesTail) with (scope,sl) ->
+      toCStmtList indent scope rest sl
 
 and toCStmt
   (indent : string)
   (sc : scope)
   (stmt : statement)
+  (tail : string list)
 : (scope * string list) =
   match stmt with
   | Assign (id, exp) ->
-    ((declare sc id), [indent^id^" = "^(toCExpr exp)^";"])
+    ((declare sc id), (indent^id^" = "^(toCExpr exp)^";")::tail)
   | Read id ->
-    ((declare sc id), [indent^"scanf(\"%d\", &"^id^");"])
+    ((declare sc id), (indent^"scanf(\"%d\", &"^id^");")::tail)
   | Write exp ->
-    (sc, [indent^"printf(\"%d\\n\", "^(toCExpr exp)^");"])
+    (sc, (indent^"printf(\"%d\\n\", "^(toCExpr exp)^");")::tail)
   | If (cnd, stmts) ->
-    (match (toCStmtList (tab^indent) sc stmts) with (scope,sl) ->
-      (scope, (indent^"if ("^(toCCond cnd)^") {") :: sl))
+    let line = (indent^"if ("^(toCCond cnd)^") {") in
+    toCStmtList (tab^indent) sc stmts (line::tail)
   | While (cnd, stmts) ->
-    (match (toCStmtList (tab^indent) sc stmts) with (scope,sl) ->
-      (scope, (indent^"while ("^(toCCond cnd)^") {") :: sl))
+    let line = (indent^"while ("^(toCCond cnd)^") {") in
+    toCStmtList (tab^indent) sc stmts (line::tail)
 
 and toCCond : cond -> string = function
   | Cond (op, exp1, exp2) ->
