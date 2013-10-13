@@ -840,7 +840,7 @@ let rec generateCCode
       Result (toCAst ast))
 
 and toCAst (ast : ast) : string list =
-  match (toCStmtList tab SS.empty ast []) with (scope,sl) ->
+  match (toCStmtList "" SS.empty ast []) with (scope,sl) ->
     "#include <stdio.h>" ::
     "int main()" ::
     "{" ::
@@ -859,7 +859,7 @@ and toCStmtList
   match stmts with
   | [] -> (sc, (indent^"}")::linesTail)
   | stmt :: rest ->
-    match (toCStmt indent sc stmt linesTail) with (scope,sl) ->
+    match (toCStmt (tab^indent) sc stmt linesTail) with (scope,sl) ->
       toCStmtList indent scope rest sl
 
 and toCStmt
@@ -877,10 +877,10 @@ and toCStmt
     (sc, (indent^"printf(\"%d\\n\", "^(toCExpr exp)^");")::tail)
   | If (cnd, stmts) ->
     let line = (indent^"if ("^(toCCond cnd)^") {") in
-    toCStmtList (tab^indent) sc stmts (line::tail)
+    toCStmtList indent sc stmts (line::tail)
   | While (cnd, stmts) ->
     let line = (indent^"while ("^(toCCond cnd)^") {") in
-    toCStmtList (tab^indent) sc stmts (line::tail)
+    toCStmtList indent sc stmts (line::tail)
 
 and toCCond : cond -> string = function
   | Cond (op, exp1, exp2) ->
