@@ -840,10 +840,10 @@ let rec generateCCode
       Result (toCAst ast))
 
 and toCAst (ast : ast) : string list =
+  "#include <stdio.h>" ::
+  "int main()" ::
+  "{" ::
   match (toCStmtList "" SS.empty ast []) with (scope,sl) ->
-    "#include <stdio.h>" ::
-    "int main()" ::
-    "{" ::
     (toCDecls tab scope) ::
     List.rev sl
 
