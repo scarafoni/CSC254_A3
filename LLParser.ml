@@ -824,6 +824,8 @@ module SS = Set.Make(String);;
 
 type scope = SS.t;;
 
+let tab = "    ";;
+
 (* declare an ident in a scope *)
 let declare sc id : scope =
   SS.add id sc;;
@@ -838,36 +840,33 @@ let rec generateCCode
       Result (toCAst ast))
 
 and toCAst (ast : ast) : string list =
-  match (toCStmtList 1 SS.empty ast) with (scope,sl) ->
+  match (toCStmtList tab SS.empty ast) with (scope,sl) ->
     "#include <stdio.h>" ::
     "int main()" ::
     "{" ::
-    (toCDecls 1 scope) ::
+    (toCDecls tab scope) ::
     sl
 
-and toCDecls (depth : int) (sc : scope) : string =
-  let indent = String.make (depth*4) ' ' in
+and toCDecls (indent : string) (sc : scope) : string =
   indent^"int "^(String.concat ", " (SS.elements sc))^";"
 
 and toCStmtList
-  (depth : int)
+  (indent : string)
   (sc : scope)
   (stmts : statement list)
 : (scope * string list) =
-  let indent = String.make ((depth-1)*4) ' ' in
   match stmts with
   | [] -> (sc, [indent^"}"])
   | stmt :: rest ->
-    match (toCStmtList depth sc rest) with (scope,sl) ->
-      match (toCStmt depth scope stmt) with (scope,slInner) ->
+    match (toCStmtList indent sc rest) with (scope,sl) ->
+      match (toCStmt indent scope stmt) with (scope,slInner) ->
         (scope, slInner @ sl)
 
 and toCStmt
-  (depth : int)
+  (indent : string)
   (sc : scope)
   (stmt : statement)
 : (scope * string list) =
-  let indent = String.make (depth*4) ' ' in
   match stmt with
   | Assign (id, exp) ->
     ((declare sc id), [indent^id^" = "^(toCExpr exp)^";"])
@@ -876,10 +875,10 @@ and toCStmt
   | Write exp ->
     (sc, [indent^"printf(\"%d\\n\", "^(toCExpr exp)^");"])
   | If (cnd, stmts) ->
-    (match (toCStmtList (depth+1) sc stmts) with (scope,sl) ->
+    (match (toCStmtList (tab^indent) sc stmts) with (scope,sl) ->
       (scope, (indent^"if ("^(toCCond cnd)^") {") :: sl))
   | While (cnd, stmts) ->
-    (match (toCStmtList (depth+1) sc stmts) with (scope,sl) ->
+    (match (toCStmtList (tab^indent) sc stmts) with (scope,sl) ->
       (scope, (indent^"while ("^(toCCond cnd)^") {") :: sl))
 
 and toCCond : cond -> string = function
