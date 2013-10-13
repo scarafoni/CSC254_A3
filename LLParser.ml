@@ -872,7 +872,7 @@ and toCStmt
   | Assign (id, exp) ->
     ((declare sc id), (indent^id^" = "^(toCExpr exp)^";")::tail)
   | Read id ->
-    ((declare sc id), (indent^"scanf(\"%d\", &"^id^");")::tail)
+    ((declare sc id), (indent^"if (!scanf(\"%d\", &"^id^")) return 1;")::tail)
   | Write exp ->
     (sc, (indent^"printf(\"%d\\n\", "^(toCExpr exp)^");")::tail)
   | If (cnd, stmts) ->
