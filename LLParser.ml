@@ -893,7 +893,7 @@ and toCExpr : expr -> string = function
     (toCExpr exp1)^" "^op^" "^(toCExpr exp2)
 
 (* ****************************************************** *)
-
+(*
 let interpret2
      (table   : parseTable)
      (program : string)
@@ -901,7 +901,7 @@ let interpret2
 	      match (parse table program) with
 	      | Result a -> Result (toAstP a)
 	      | Error e  -> Error e
-
+*)
 
 let t1 = "read a
 read b
@@ -956,6 +956,10 @@ let t4 =
  x:= 2
  write x";;
 
+(*this is the program to run, alter it as you see fit*)
+let program_to_run = primes;;
+(*program to run *)
+
 
 (* Run the parser and interpreter using a grammar and program, and stdio *)
 let driver grammar (program : string) =
@@ -980,7 +984,7 @@ let cDriver grammar =
 if Sys.argv.(Array.length Sys.argv - 1) = "-c" then
   cDriver extendedCalcGrammar
 else
-  driver extendedCalcGrammar primes;;
+  driver extendedCalcGrammar program_to_run;;
 
 
 (*let dz = driver extendedCalcGrammar primes;;*)
