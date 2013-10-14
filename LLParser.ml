@@ -645,7 +645,7 @@ let rec toAstP : parseTree -> ast = function
 (* Replace the 'something' with a pattern match which will bind the
    correct 's' and 'sl' so the RHS can be:  toAstS s :: toAstSL sl  *)
 and toAstSL : parseTree -> ast = function
-  | Node ("SL",[s;sl]) -> [toAstS s]@ (toAstSL sl)
+  | Node ("SL",[s;sl]) -> (toAstS s) :: (toAstSL sl)
   | Node ("SL",[])     -> []
   | _                  -> []
 
@@ -893,15 +893,7 @@ and toCExpr : expr -> string = function
     (toCExpr exp1)^" "^op^" "^(toCExpr exp2)
 
 (* ****************************************************** *)
-(*
-let interpret2
-     (table   : parseTable)
-     (program : string)
-              : (string,ast) either =
-	      match (parse table program) with
-	      | Result a -> Result (toAstP a)
-	      | Error e  -> Error e
-*)
+
 
 let t1 = "read a
 read b
@@ -956,10 +948,6 @@ let t4 =
  x:= 2
  write x";;
 
-(*this is the program to run, alter it as you see fit*)
-let program_to_run = primes;;
-(*program to run *)
-
 
 (* Run the parser and interpreter using a grammar and program, and stdio *)
 let driver grammar (program : string) =
@@ -971,20 +959,43 @@ let driver grammar (program : string) =
 
 
 (* Run the parser on a program from cand generate a C program, using stdout *)
-let cDriver grammar =
-  let table = makeParseTable grammar and
-    lines = readLines "Enter the program, followed by ^D" in
-  let program = String.concat "\n" lines in
+let cDriver grammar program =
+  let table = makeParseTable grammar in
   match generateCCode table program with
   | Error e -> print_endline ("Error: "^e)
   | Result cOutput -> printLines cOutput;;
 
-(* If -c argument is given, translate a program into C.
- * Otherwise, interpret the program. *)
-if Sys.argv.(Array.length Sys.argv - 1) = "-c" then
-  cDriver extendedCalcGrammar
-else
-  driver extendedCalcGrammar program_to_run;;
+(* source:
+ * http://stackoverflow.com/questions/5774934/how-do-i-read-in-lines-from-a-text-file-in-ocaml
+ *)
+let read_file file_name =
+  let in_channel = open_in file_name in
+  let rec read_recursive lines =
+    try
+      let line = input_line in_channel in
+       read_recursive (line :: lines)
+    with End_of_file ->
+      lines in
+  let lines = read_recursive [] in
+  let _ = close_in_noerr in_channel in
+  String.concat "\n" (List.rev lines) ;;
 
+let main () =
+  (* If -c argument is given, translate a program into C.
+  * Otherwise, interpret the program. *)
+  match (Array.length Sys.argv) with
+  | 1 ->
+    driver extendedCalcGrammar primes
+  | 2 ->
+    let program = read_file Sys.argv.(1) in
+    driver extendedCalcGrammar program
+  | 3 when Sys.argv.(1) = "-c" ->
+    let program = read_file Sys.argv.(2) in
+    cDriver extendedCalcGrammar program
+  | _ ->
+    prerr_endline("Usage "^Sys.argv.(0)^" [-c] program.calc")
+;;
 
-(*let dz = driver extendedCalcGrammar primes;;*)
+(* If using ocamlc or ocamlrun, call main,
+ * otherwise let the user call functions manually *)
+if !Sys.interactive then () else main ();;

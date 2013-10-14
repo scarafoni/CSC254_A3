@@ -1,10 +1,10 @@
-all: LLParser primes
+all: LLParser
 
 LLParser: LLParser.ml
-	ocamlc -o LLParser LLParser.ml
+	ocamlc -g -o LLParser LLParser.ml
 
 %.c: %.calc LLParser
-	./LLParser -c < $< > $@
+	./LLParser -c $< > $@
 
 primes: primes.c
 	cc -o primes primes.c
