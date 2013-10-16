@@ -1,0 +1,72 @@
+                            University of Rochester
+                               CSC 254, Fall 2013
+                          A3. Interpretation in OCaml
+                                 Charles Lehner
+                                  Dan Scarfoni
+
+We made a program in OCaml that parsers, interprets, and translates programs
+with a LL(1) grammar.
+
+Files
+
+    LLParser.ml   The parser, interpreter, and translator
+    Makefile      Makefile to help with compiling
+    README        Readme
+    primes.calc   Prime number calculator, in extended calculator language
+
+Compiling
+
+    # compile LLParser
+    make
+
+    # compile the primes calculator program
+    make primes
+
+Usage
+
+    # Run the calculator language interpreter for a program
+    ./LLParser program.calc
+
+    # Compile a calculator program into C code
+    ./LLParser -c program.calc
+
+    # Compile and run the primes program
+    make primes && ./primes
+
+Features and Implementation
+
+    We generate a parse table from a grammar, use it to build a parse tree of an
+    input program, then build an AST from the parse tree, and from the AST
+    either interpret the program, or generate corresponding C code (extra
+    credit).
+
+    The AST generator recursively matches Nodes in the parse tree corresponding
+    to productions in the grammar.
+
+    The interpreter recursively walks the AST and interprets it. It keeps track
+    of variable values, and the current state of input/output, in an environment
+    object which is passed and updated through every statement.
+
+    The C code generater recursively walks the AST and generates C code for it.
+    It creates variable declarations by collecting a set of identifiers used in
+    assignments and read statements, and passing them up to the top level of the
+    generator. It indents the output code properly by passing down the
+    indentation level and incrementing it in nested statement lists.
+
+    The C code generator makes use of tail recursion, but the interpreter does
+    not, since it uses the (>>=) function to handle the return values.
+
+Limitations and Future Work
+
+    The interpreter currently reads all lines of input to the program, then
+    interprets the program, and then outputs all lines of output.  This allows
+    the interpreter to use no IO and be purely functional, but prevents
+    interacting with the interpreter as it is interpreting the program. A more
+    practical extension could let the interpreter read and write to stdio during
+    program interpretation, using the writeEnv/readEnv functions.
+
+    LLParser could be extended to handle multiple data types, functions, and
+    syntax errors. The C code generator could be made to handle command line
+    arguments. The handling of command line arguments in LLParser could be
+    changed to use the Arg Ocaml module, which would give it a more functional
+    style.
